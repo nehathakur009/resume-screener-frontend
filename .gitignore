@@ -1,0 +1,57 @@
+# Node.js dependencies and cache
+/node_modules/
+/npm-debug.log*
+/npx/
+/.npm/
+/.cache/
+
+# Next.js build artifacts
+/.next/
+/out/
+/build/
+/next-server.log
+
+# IDE and editor files
+/.vscode/
+/.idea/
+/.DS_Store
+*.swp
+*.swo
+*.swn
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Environment variables
+.env
+.env.*.local
+
+# Testing and coverage
+/coverage/
+/nyc_output/
+
+# CI/CD
+/.github/workflows/
+
+# Next.js cache
+/.next-cache/
+
+# Package manager cache
+/yarn-error.log
+/yarn.lock
+/pnpm-lock.yaml
+
+# TypeScript cache
+tsconfig.tsbuildinfo
+
+# Other
+dist/
+/.nyc_output/
