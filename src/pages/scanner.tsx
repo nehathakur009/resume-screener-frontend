@@ -176,20 +176,10 @@ export default function ScannerPage() {
 
           {/* ── Step 2 · Upload Resumes ── */}
           <Paper sx={{ p: 2 }}>
-            {/* <StepHeader
+            { <StepHeader
               number={2}
               label="Upload Resumes"
-              right={
-                resumes.length > 0 ? (
-                  <Chip
-                    label={`${resumes.length} in system`}
-                    size="small"
-                    color="success"
-                    variant="outlined"
-                  />
-                ) : undefined
-              }
-            /> */}
+            /> }
 
             <UploadZone onDrop={handleFileDrop} loading={resumeStatus === 'loading'} />
 
@@ -213,7 +203,7 @@ export default function ScannerPage() {
 
           {/* ── Step 3 · Screen ── */}
           <Paper sx={{ p: 2 }}>
-            <StepHeader number={3} label="Screen Resumes" />
+           {/* <StepHeader number={3} label="Screen Resumes" />*/}
             <Stack direction="column" alignItems="center" spacing={1}>
               <Button
                 variant="contained"

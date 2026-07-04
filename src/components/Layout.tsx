@@ -15,7 +15,7 @@ const DRAWER_WIDTH = 240
 
 const navItems = [
   { label: 'Dashboard',        href: '/',                 icon: <HomeIcon fontSize="small" /> },
-  { label: 'Resume Scanner',   href: '/scanner',          icon: <SearchIcon fontSize="small" /> },
+  { label: 'Screen Resumes',   href: '/scanner',          icon: <SearchIcon fontSize="small" /> },
   { label: 'Job Descriptions', href: '/job-descriptions', icon: <WorkIcon fontSize="small" /> },
   { label: 'Resumes',          href: '/resumes',          icon: <DescriptionIcon fontSize="small" /> },
   { label: 'Results',          href: '/results',          icon: <LeaderboardIcon fontSize="small" /> },
@@ -55,7 +55,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </Typography>
             <Typography variant="body1" fontWeight={800} letterSpacing={-0.5}
               sx={{ color: 'primary.light', lineHeight: 1.2 }}>
-              Scanner
+              Screener
             </Typography>
           </Box>
         </Box>

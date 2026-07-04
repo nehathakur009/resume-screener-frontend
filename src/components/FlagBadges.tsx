@@ -29,14 +29,19 @@ interface Props {
   maxVisible?: number
 }
 
-export default function FlagBadges({ flags, maxVisible = 3 }: Props) {
+export default function FlagBadges({ flags, maxVisible = 1 }: Props) {
   if (!flags?.length) return null
 
   const visible = flags.slice(0, maxVisible)
-  const extra   = flags.length - maxVisible
+  const hidden  = flags.slice(maxVisible)
+  const extra   = hidden.length
+
+  const tooltipContent = hidden
+    .map((f) => labelMap[f.type] ?? f.type.replace(/_/g, ' '))
+    .join(', ')
 
   return (
-    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+    <Stack direction="row" spacing={0.5} alignItems="center">
       {visible.map((flag, i) => {
         const cfg  = severityConfig[flag.severity] ?? severityConfig.low
         const Icon = cfg.Icon
@@ -48,13 +53,19 @@ export default function FlagBadges({ flags, maxVisible = 3 }: Props) {
               color={cfg.color}
               icon={<Icon fontSize="small" />}
               label={label}
-              sx={{ fontSize: '0.7rem', height: 22, cursor: 'help' }}
+              sx={{ fontSize: '0.68rem', height: 20, cursor: 'help' }}
             />
           </Tooltip>
         )
       })}
       {extra > 0 && (
-        <Chip size="small" label={`+${extra} more`} sx={{ fontSize: '0.7rem', height: 22 }} />
+        <Tooltip title={tooltipContent} arrow placement="top">
+          <Chip
+            size="small"
+            label={`+${extra}`}
+            sx={{ fontSize: '0.68rem', height: 20, cursor: 'help', fontWeight: 600 }}
+          />
+        </Tooltip>
       )}
     </Stack>
   )

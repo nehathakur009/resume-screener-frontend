@@ -381,7 +381,7 @@ export default function DashboardPage() {
           <Box sx={{ py: 4, textAlign: 'center' }}>
             <AssessmentOutlinedIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
             <Typography variant="body2" color="text.disabled">
-              Go to Resume Scanner to screen candidates against a job description.
+              Go to Screen Resumes to screen candidates against a job description.
             </Typography>
           </Box>
         ) : (

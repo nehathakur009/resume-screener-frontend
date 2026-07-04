@@ -26,6 +26,13 @@ export interface CriterionScore {
   weight: number
   score: number
   reason: string
+  evidence?: {
+    matched_skills?: string[]
+    missing_skills?: string[]
+    raw_text_references?: string[]
+    matched_entity_ids?: string[]
+    skill_source?: 'skills_section' | 'summary' | 'roles'
+  }
 }
 
 export interface ParsedProfile {
@@ -86,6 +93,7 @@ export interface ScoringResult {
   skills: string[] | null
   total_experience_years: number | null
   roles: Role[] | null
+  education: Education[] | null
 }
 
 export interface JobDescription {

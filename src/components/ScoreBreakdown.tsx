@@ -82,6 +82,32 @@ export default function ScoreBreakdown({ open, onClose, result }: Props) {
             </AccordionSummary>
             <AccordionDetails sx={{ pt: 0 }}>
               <Typography variant="body2" color="text.secondary">{c.reason}</Typography>
+              {c.evidence?.raw_text_references?.length > 0 && (
+                <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
+                  <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                    Evidence in resume:
+                  </Typography>
+                  <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                    {c.evidence.raw_text_references.map((text, i) => (
+                      <Chip
+                        key={i}
+                        label={text}
+                        size="small"
+                        sx={{
+                          bgcolor: 'primary.light',
+                          color: 'primary.contrastText',
+                          cursor: 'pointer',
+                          '&:hover': { bgcolor: 'primary.main' },
+                          fontSize: '0.7rem'
+                        }}
+                        onClick={() => {
+                          console.log('Highlight in resume:', text);
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
             </AccordionDetails>
           </Accordion>
         ))}
