@@ -1,61 +1,106 @@
-import { Chip, Stack, Tooltip } from '@mui/material'
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
-import { Flag } from '../types'
-
-const severityConfig = {
-  high:   { color: 'error'   as const, Icon: ErrorOutlineIcon  },
-  medium: { color: 'warning' as const, Icon: WarningAmberIcon  },
-  low:    { color: 'default' as const, Icon: InfoOutlinedIcon  },
-}
-
-const labelMap: Record<string, string> = {
-  date_overlap:              'Date Overlap',
-  experience_exaggeration:   'Exp. Exaggeration',
-  employment_gap:            'Employment Gap',
-  skill_inflation:           'Skill Inflation',
-  vague_claims:              'Vague Claims',
-  contradictory_level:       'Contradictory Level',
-  unexplained_gap:           'Unexplained Gap',
-  unverifiable_timeline:     'No Timeline',
-  partial_dates:             'Partial Dates',
-  missing_role_details:      'Thin Descriptions',
-  skill_padding:             'Skill Padding',
-}
+import {
+  Box, Typography, List, ListItem, ListItemText,
+  Chip, Stack, Tooltip, IconButton,
+} from '@mui/material'
+import HistoryIcon from '@mui/icons-material/History'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import { JobDescription } from '../types'
 
 interface Props {
-  flags: Flag[]
-  maxVisible?: number
+  jdList: JobDescription[]
+  currentJdId: number | null
+  screeningJdId: number | null
+  resumeCount: number
+  onSelect: (jd: JobDescription) => void
+  onRunScoring: (jd: JobDescription) => void
 }
 
-export default function FlagBadges({ flags, maxVisible = 3 }: Props) {
-  if (!flags?.length) return null
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
 
-  const visible = flags.slice(0, maxVisible)
-  const extra   = flags.length - maxVisible
+export default function JDHistory({
+  jdList,
+  currentJdId,
+  screeningJdId,
+  resumeCount,
+  onSelect,
+  onRunScoring,
+}: Props) {
+  if (!jdList.length) return null
 
   return (
-    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-      {visible.map((flag, i) => {
-        const cfg  = severityConfig[flag.severity] ?? severityConfig.low
-        const Icon = cfg.Icon
-        const label = labelMap[flag.type] ?? flag.type.replace(/_/g, ' ')
-        return (
-          <Tooltip key={i} title={flag.description} arrow placement="top">
-            <Chip
-              size="small"
-              color={cfg.color}
-              icon={<Icon fontSize="small" />}
-              label={label}
-              sx={{ fontSize: '0.7rem', height: 22, cursor: 'help' }}
-            />
-          </Tooltip>
-        )
-      })}
-      {extra > 0 && (
-        <Chip size="small" label={`+${extra} more`} sx={{ fontSize: '0.7rem', height: 22 }} />
-      )}
-    </Stack>
+    <Box>
+      <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1 }}>
+        <HistoryIcon fontSize="small" color="action" />
+        <Typography variant="caption" color="text.secondary" fontWeight={600} letterSpacing={0.5}>
+          SAVED JOB DESCRIPTIONS
+        </Typography>
+        <Chip
+          label={`${jdList.length}`}
+          size="small"
+          sx={{ height: 16, fontSize: '0.65rem', ml: 0.5 }}
+        />
+      </Stack>
+
+      <List dense disablePadding sx={{ maxHeight: 240, overflowY: 'auto' }}>
+        {jdList.map((jd) => {
+          const isActive    = jd.id === currentJdId
+          const isScreening = jd.id === screeningJdId
+
+          return (
+            <ListItem
+              key={jd.id}
+              disablePadding
+              secondaryAction={
+                <Tooltip
+                  title={resumeCount === 0 ? 'Upload resumes first' : `Screen ${resumeCount} resume${resumeCount !== 1 ? 's' : ''} against this JD`}
+                  arrow
+                >
+                  <span>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      disabled={resumeCount === 0 || isScreening}
+                      onClick={(e) => { e.stopPropagation(); onRunScoring(jd) }}
+                      sx={{ mr: 0.5 }}
+                    >
+                      <PlayArrowIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              }
+              sx={{
+                borderRadius: 1,
+                mb: 0.25,
+                bgcolor: isActive ? 'action.selected' : 'transparent',
+                '&:hover': { bgcolor: 'action.hover' },
+                cursor: 'pointer',
+              }}
+              onClick={() => onSelect(jd)}
+            >
+              <ListItemText
+                sx={{ pl: 1, py: 0.5 }}
+                primary={
+                  <Stack direction="row" alignItems="center" spacing={0.75}>
+                    <Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 280 }}>
+                      {jd.title}
+                    </Typography>
+                    {isActive && (
+                      <Chip label="active" size="small" color="primary" sx={{ height: 16, fontSize: '0.62rem' }} />
+                    )}
+                    {isScreening && (
+                      <Chip label="screening…" size="small" color="warning" sx={{ height: 16, fontSize: '0.62rem' }} />
+                    )}
+                  </Stack>
+                }
+                secondary={formatDate(jd.created_at)}
+                secondaryTypographyProps={{ variant: 'caption' }}
+              />
+            </ListItem>
+          )
+        })}
+      </List>
+    </Box>
   )
 }

@@ -13,12 +13,29 @@ import { AppDispatch } from '../store'
 import { createJD } from '../store/apps/scoring'
 import { JobDescription } from '../types'
 
+const TITLE_MAX = 150
+const DESC_MIN  = 50
+const DESC_MAX  = 10000
+
 const schema = yup.object({
-  title:       yup.string().required('Position title is required'),
-  description: yup.string().min(50, 'Must be at least 50 characters').required('Job description is required'),
+  title: yup
+    .string()
+    .required('Position title is required')
+    .min(3, 'Title must be at least 3 characters')
+    .max(TITLE_MAX, `Title must not exceed ${TITLE_MAX} characters`),
+  description: yup
+    .string()
+    .required('Job description is required')
+    .min(DESC_MIN, `Description must be at least ${DESC_MIN} characters`)
+    .max(DESC_MAX, `Description must not exceed ${DESC_MAX} characters`),
 })
 
 type FormValues = { title: string; description: string }
+
+function charCount(val: string, max: number) {
+  const n = val?.length ?? 0
+  return `${n} / ${max}`
+}
 
 interface Props {
   open: boolean
@@ -33,16 +50,18 @@ export default function AddJDDialog({ open, onClose, onSaved }: Props) {
     control,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid, isSubmitted },
   } = useForm<FormValues>({
     resolver: yupResolver(schema),
     defaultValues: { title: '', description: '' },
+    mode: 'onTouched',   // validate when user leaves a field
   })
 
   const onSubmit = async (data: FormValues) => {
     try {
       const jd = await dispatch(createJD(data)).unwrap()
-      toast.success(`Saved: ${jd.title}`)
+      const shortTitle = jd.title.length > 40 ? jd.title.slice(0, 40) + '…' : jd.title
+      toast.success(`Job description saved: "${shortTitle}"`)
       reset()
       onSaved?.(jd)
       onClose()
@@ -78,8 +97,20 @@ export default function AddJDDialog({ open, onClose, onSaved }: Props) {
                   placeholder="e.g. Senior Full-Stack Engineer"
                   fullWidth
                   size="small"
+                  inputProps={{ maxLength: TITLE_MAX }}
                   error={!!errors.title}
-                  helperText={errors.title?.message}
+                  helperText={
+                    <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography component="span" variant="caption" color={errors.title ? 'error.main' : 'text.disabled'}>
+                        {errors.title?.message ?? 'Required · min 3 characters'}
+                      </Typography>
+                      <Typography component="span" variant="caption"
+                        color={(field.value?.length ?? 0) > TITLE_MAX * 0.9 ? 'warning.main' : 'text.disabled'}
+                      >
+                        {charCount(field.value, TITLE_MAX)}
+                      </Typography>
+                    </Box>
+                  }
                 />
               )}
             />
@@ -94,8 +125,20 @@ export default function AddJDDialog({ open, onClose, onSaved }: Props) {
                   fullWidth
                   multiline
                   rows={9}
+                  inputProps={{ maxLength: DESC_MAX }}
                   error={!!errors.description}
-                  helperText={errors.description?.message}
+                  helperText={
+                    <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Typography component="span" variant="caption" color={errors.description ? 'error.main' : 'text.disabled'}>
+                        {errors.description?.message ?? `Required · min ${DESC_MIN} characters`}
+                      </Typography>
+                      <Typography component="span" variant="caption"
+                        color={(field.value?.length ?? 0) > DESC_MAX * 0.9 ? 'warning.main' : 'text.disabled'}
+                      >
+                        {charCount(field.value, DESC_MAX)}
+                      </Typography>
+                    </Box>
+                  }
                 />
               )}
             />
@@ -110,7 +153,7 @@ export default function AddJDDialog({ open, onClose, onSaved }: Props) {
             type="submit"
             variant="contained"
             disableElevation
-            disabled={isSubmitting}
+            disabled={isSubmitting || (isSubmitted && !isValid)}
             startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <AddIcon />}
           >
             {isSubmitting ? 'Saving…' : 'Save JD'}

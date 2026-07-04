@@ -1,7 +1,16 @@
-import { useCallback } from 'react'
-import { useDropzone } from 'react-dropzone'
-import { Box, LinearProgress, Typography } from '@mui/material'
+import { useCallback, useState } from 'react'
+import { useDropzone, FileRejection } from 'react-dropzone'
+import { Alert, Box, LinearProgress, Typography, List, ListItem } from '@mui/material'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
+
+const ACCEPT = {
+  'application/pdf': ['.pdf'],
+  'application/msword': ['.doc'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+}
+
+const MAX_SIZE_BYTES = 5 * 1024 * 1024  // 5 MB
+const MAX_SIZE_LABEL = '5 MB'
 
 interface Props {
   onDrop: (files: File[]) => void
@@ -9,13 +18,42 @@ interface Props {
 }
 
 export default function UploadZone({ onDrop, loading }: Props) {
-  const onDropAccepted = useCallback((files: File[]) => onDrop(files), [onDrop])
+  const [rejections, setRejections] = useState<string[]>([])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const onDropAccepted = useCallback((files: File[]) => {
+    setRejections([])
+    onDrop(files)
+  }, [onDrop])
+
+  const onDropRejected = useCallback((rejected: FileRejection[]) => {
+    const errors: string[] = []
+    rejected.forEach(({ file, errors: errs }) => {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(1)
+      errs.forEach((e) => {
+        if (e.code === 'file-too-large') {
+          errors.push(
+            `"${file.name}" is ${sizeMB} MB — exceeds the ${MAX_SIZE_LABEL} limit. Please compress or reduce the file size.`
+          )
+        } else if (e.code === 'file-invalid-type') {
+          errors.push(`"${file.name}" is not a supported format. Only PDF, DOC, and DOCX files are accepted.`)
+        } else {
+          errors.push(`"${file.name}": ${e.message}`)
+        }
+      })
+    })
+    setRejections(errors)
+  }, [])
+
+  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDropAccepted,
-    accept: { 'application/pdf': ['.pdf'] },
+    onDropRejected,
+    accept: ACCEPT,
+    maxSize: MAX_SIZE_BYTES,
     multiple: true,
   })
+
+  const borderColor = isDragReject ? 'error.main' : isDragActive ? 'primary.main' : 'grey.300'
+  const bgColor     = isDragReject ? '#fff5f5'    : isDragActive ? 'primary.50'   : 'grey.50'
 
   return (
     <Box>
@@ -23,9 +61,9 @@ export default function UploadZone({ onDrop, loading }: Props) {
         {...getRootProps()}
         sx={{
           border: '2px dashed',
-          borderColor: isDragActive ? 'primary.main' : 'grey.300',
+          borderColor,
           borderRadius: 2,
-          bgcolor: isDragActive ? 'primary.50' : 'grey.50',
+          bgcolor: bgColor,
           p: 3.5,
           textAlign: 'center',
           cursor: 'pointer',
@@ -34,14 +72,35 @@ export default function UploadZone({ onDrop, loading }: Props) {
         }}
       >
         <input {...getInputProps()} />
-        <UploadFileIcon sx={{ fontSize: 40, color: 'primary.light', mb: 0.75 }} />
+        <UploadFileIcon
+          sx={{ fontSize: 40, color: isDragReject ? 'error.light' : 'primary.light', mb: 0.75 }}
+        />
         <Typography variant="subtitle1" fontWeight={600}>
-          {isDragActive ? 'Drop PDFs here…' : 'Drag & drop PDF resumes here'}
+          {isDragReject
+            ? 'Only PDF, DOC, or DOCX files are allowed'
+            : isDragActive
+            ? 'Drop resumes here…'
+            : 'Drag & drop resumes here'}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          or click to browse — multiple files supported
+          PDF, DOC, DOCX · multiple files · max {MAX_SIZE_LABEL} each
         </Typography>
       </Box>
+
+      {rejections.length > 0 && (
+        <Alert severity="error" onClose={() => setRejections([])} sx={{ mt: 1 }}>
+          <Typography variant="caption" fontWeight={700} display="block" sx={{ mb: 0.5 }}>
+            {rejections.length === 1 ? 'File could not be uploaded:' : `${rejections.length} files could not be uploaded:`}
+          </Typography>
+          <List dense disablePadding sx={{ listStyleType: 'disc', pl: 2 }}>
+            {rejections.map((msg, i) => (
+              <ListItem key={i} disablePadding sx={{ display: 'list-item' }}>
+                <Typography variant="caption">{msg}</Typography>
+              </ListItem>
+            ))}
+          </List>
+        </Alert>
+      )}
 
       {loading && <LinearProgress sx={{ mt: 1, borderRadius: 1 }} />}
     </Box>

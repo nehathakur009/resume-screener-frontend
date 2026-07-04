@@ -44,16 +44,16 @@ const CRITERIA_WEIGHTS = [30, 25, 20, 15, 10]
 function ScoreBar({ value }: { value: number }) {
   const color = value >= 7 ? '#22c55e' : value >= 5 ? '#f59e0b' : '#ef4444'
   return (
-    <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
+    <Stack direction="row" spacing={0.75} alignItems="center" sx={{ width: '100%' }}>
       <LinearProgress
         variant="determinate"
         value={value * 10}
         sx={{
-          flex: 1, height: 8, borderRadius: 4, bgcolor: 'grey.200',
+          flex: 1, height: 6, borderRadius: 4, bgcolor: 'grey.200',
           '& .MuiLinearProgress-bar': { bgcolor: color, borderRadius: 4 },
         }}
       />
-      <Typography variant="body2" fontWeight={700} sx={{ color, minWidth: 36 }}>
+      <Typography variant="caption" fontWeight={700} sx={{ color, minWidth: 28 }}>
         {value.toFixed(1)}
       </Typography>
     </Stack>
@@ -68,7 +68,7 @@ function RankAvatar({ rank }: { rank: number }) {
     rank === 2 ? '#94a3b8' :
     rank === 3 ? '#cd7f32' : 'grey.200'
   return (
-    <Avatar sx={{ width: 28, height: 28, fontSize: '0.75rem', fontWeight: 700, bgcolor: bg, color: rank <= 3 ? 'white' : 'text.primary' }}>
+    <Avatar sx={{ width: 24, height: 24, fontSize: '0.68rem', fontWeight: 700, bgcolor: bg, color: rank <= 3 ? 'white' : 'text.primary' }}>
       {rank}
     </Avatar>
   )
@@ -124,57 +124,60 @@ export default function RankedTable({ results, jdList = [] }: Props) {
   /* ── columns ── */
   const columns: GridColDef[] = [
     {
-      field: 'rank', headerName: '#', width: 55,
+      field: 'rank', headerName: '#', width: 46,
       renderCell: (p: GridRenderCellParams) => <RankAvatar rank={p.value} />,
     },
     {
-      field: 'name', headerName: 'Candidate', width: 175,
+      field: 'name', headerName: 'Candidate', width: 140,
       renderCell: (p: GridRenderCellParams<ScoringResult>) => (
-        <Box>
-          <Typography variant="body2" fontWeight={600} noWrap>{p.row.name}</Typography>
-          {p.row.candidate_email && (
-            <Typography variant="caption" color="text.secondary" noWrap>{p.row.candidate_email}</Typography>
-          )}
-        </Box>
+        <Typography variant="body2" fontWeight={600} noWrap>{p.row.name}</Typography>
       ),
     },
     {
-      field: 'jd_title', headerName: 'Job Description', width: 190,
+      field: 'candidate_email', headerName: 'Email', width: 180,
+      renderCell: (p: GridRenderCellParams<ScoringResult>) => (
+        <Typography variant="caption" color="text.secondary" noWrap>
+          {p.row.candidate_email || '—'}
+        </Typography>
+      ),
+    },
+    {
+      field: 'jd_title', headerName: 'Job Description', width: 170,
       renderCell: (p: GridRenderCellParams<ScoringResult>) => (
         <Tooltip title={p.row.jd_title ?? ''} arrow placement="top">
-          <Typography variant="body2" noWrap sx={{ maxWidth: 170, color: 'primary.main', fontWeight: 500 }}>
+          <Typography variant="body2" noWrap sx={{ maxWidth: 155, color: 'primary.main', fontWeight: 500 }}>
             {p.row.jd_title ?? `JD #${p.row.jd_id}`}
           </Typography>
         </Tooltip>
       ),
     },
     {
-      field: 'total_score', headerName: 'Score', width: 160,
+      field: 'total_score', headerName: 'Score', width: 140,
       renderCell: (p: GridRenderCellParams) => <ScoreBar value={p.value} />,
     },
     {
-      field: 'total_experience_years', headerName: 'Experience', width: 110,
+      field: 'total_experience_years', headerName: 'Exp.', width: 80,
       renderCell: (p: GridRenderCellParams) => (
-        <Typography variant="body2">{p.value ? `${Number(p.value).toFixed(1)}y` : '—'}</Typography>
+        <Typography variant="caption">{p.value ? `${Number(p.value).toFixed(1)}y` : '—'}</Typography>
       ),
     },
     {
-      field: 'skills', headerName: 'Key Skills', flex: 1, minWidth: 180, sortable: false,
+      field: 'skills', headerName: 'Key Skills', flex: 1, minWidth: 160, sortable: false,
       renderCell: (p: GridRenderCellParams<ScoringResult>) => (
-        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-          {(p.row.skills ?? []).slice(0, 4).map((s) => (
-            <Chip key={s} label={s} size="small" sx={{ height: 20, fontSize: '0.65rem' }} />
+        <Stack direction="row" spacing={0.4} flexWrap="wrap" useFlexGap>
+          {(p.row.skills ?? []).slice(0, 2).map((s) => (
+            <Chip key={s} label={s} size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
           ))}
-          {(p.row.skills ?? []).length > 4 && (
+          {(p.row.skills ?? []).length > 2 && (
             <Typography variant="caption" color="text.disabled">
-              +{(p.row.skills ?? []).length - 4}
+              +{(p.row.skills ?? []).length - 2}
             </Typography>
           )}
         </Stack>
       ),
     },
     {
-      field: 'flags', headerName: 'Flags', width: 200, sortable: false,
+      field: 'flags', headerName: 'Flags', width: 180, sortable: false,
       renderCell: (p: GridRenderCellParams<ScoringResult>) => {
         const flags = p.row.flags ?? []
         if (!flags.length) {
@@ -184,19 +187,19 @@ export default function RankedTable({ results, jdList = [] }: Props) {
               size="small"
               color="success"
               variant="outlined"
-              sx={{ fontSize: '0.68rem', height: 20 }}
+              sx={{ fontSize: '0.62rem', height: 18 }}
             />
           )
         }
-        return <FlagBadges flags={flags} maxVisible={2} />
+        return <FlagBadges flags={flags} maxVisible={1} />
       },
     },
     {
-      field: 'actions', headerName: 'Details', width: 80, sortable: false,
+      field: 'actions', headerName: '', width: 52, sortable: false,
       renderCell: (p: GridRenderCellParams<ScoringResult>) => (
         <Tooltip title="View score breakdown">
           <IconButton size="small" onClick={() => setSelected(p.row)}>
-            <InfoOutlinedIcon fontSize="small" color="primary" />
+            <InfoOutlinedIcon sx={{ fontSize: 16 }} color="primary" />
           </IconButton>
         </Tooltip>
       ),
@@ -206,39 +209,39 @@ export default function RankedTable({ results, jdList = [] }: Props) {
   return (
     <Box>
       {/* ── Criteria legend ── */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
-        <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5, bgcolor: 'grey.50' }}>
+        <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
           SCORING CRITERIA (how scores are calculated)
         </Typography>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
           {CRITERIA_LABELS.map((label, i) => (
-            <Chip key={label} label={`${label} · ${CRITERIA_WEIGHTS[i]}%`} size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />
+            <Chip key={label} label={`${label} · ${CRITERIA_WEIGHTS[i]}%`} size="small" variant="outlined" sx={{ fontSize: '0.62rem', height: 20 }} />
           ))}
         </Stack>
       </Paper>
 
       {/* ── Filter bar ── */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1.5 }}>
-          <FilterListIcon fontSize="small" color="action" />
-          <Typography variant="caption" fontWeight={700} color="text.secondary" letterSpacing={0.5}>
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5 }}>
+        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1 }}>
+          <FilterListIcon sx={{ fontSize: 16 }} color="action" />
+          <Typography variant="overline" color="text.secondary">
             FILTERS
           </Typography>
           {hasFilters && (
-            <Button size="small" startIcon={<ClearIcon />} onClick={clearFilters} sx={{ ml: 'auto', fontSize: '0.72rem' }}>
+            <Button size="small" startIcon={<ClearIcon />} onClick={clearFilters} sx={{ ml: 'auto', fontSize: '0.68rem', py: 0 }}>
               Clear
             </Button>
           )}
         </Stack>
 
-        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           {/* Candidate search */}
           <TextField
             size="small"
             placeholder="Search candidate…"
             value={candidateQ}
             onChange={(e) => setCandidateQ(e.target.value)}
-            sx={{ minWidth: 180 }}
+            sx={{ minWidth: 160 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -254,7 +257,7 @@ export default function RankedTable({ results, jdList = [] }: Props) {
           />
 
           {/* JD filter */}
-          <FormControl size="small" sx={{ minWidth: 200 }}>
+          <FormControl size="small" sx={{ minWidth: 140, maxWidth: 200 }}>
             <InputLabel>Job Description</InputLabel>
             <Select
               value={jdFilter}
@@ -269,7 +272,7 @@ export default function RankedTable({ results, jdList = [] }: Props) {
           </FormControl>
 
           {/* Experience range */}
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Experience</InputLabel>
             <Select
               value={expRange}
@@ -283,7 +286,7 @@ export default function RankedTable({ results, jdList = [] }: Props) {
           </FormControl>
 
           {/* Flag filter */}
-          <FormControl size="small" sx={{ minWidth: 170 }}>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Flag</InputLabel>
             <Select
               value={flagFilter}
@@ -310,7 +313,7 @@ export default function RankedTable({ results, jdList = [] }: Props) {
         columns={columns}
         getRowId={(row) => `${row.resume_id}-${row.jd_id}`}
         autoHeight
-        rowHeight={64}
+        rowHeight={48}
         disableRowSelectionOnClick
         pageSizeOptions={[10, 25, 50]}
         initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
@@ -318,7 +321,7 @@ export default function RankedTable({ results, jdList = [] }: Props) {
           border: 'none',
           '& .MuiDataGrid-columnHeaders': { bgcolor: 'grey.50', fontWeight: 700 },
           '& .MuiDataGrid-row:nth-of-type(even)': { bgcolor: 'grey.50' },
-          '& .MuiDataGrid-cell': { display: 'flex', alignItems: 'center' },
+          '& .MuiDataGrid-cell': { display: 'flex', alignItems: 'center', py: 0.5 },
         }}
       />
 
