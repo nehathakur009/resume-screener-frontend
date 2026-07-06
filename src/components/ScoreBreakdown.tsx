@@ -2,6 +2,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Box, Typography, LinearProgress, Divider,
   Accordion, AccordionSummary, AccordionDetails, Stack,
+  Chip,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { ScoringResult } from '../types'
@@ -57,7 +58,7 @@ export default function ScoreBreakdown({ open, onClose, result }: Props) {
         <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Score Breakdown</Typography>
         {(result.criterion_breakdown || []).map((c, i) => (
           <Accordion key={i} disableGutters elevation={0} sx={{ border: '1px solid', borderColor: 'divider', mb: 0.5, borderRadius: '8px !important', '&:before': { display: 'none' } }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon /> }>
               <Stack direction="row" alignItems="center" spacing={2} sx={{ flex: 1, pr: 1 }}>
                 <Typography variant="body2" fontWeight={600} sx={{ minWidth: 160 }}>{c.criterion}</Typography>
                 <Box sx={{ flex: 1 }}>

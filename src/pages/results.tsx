@@ -21,8 +21,8 @@ export default function ResultsPage() {
   }, [dispatch])
 
   const filtered = filterJdId
-    ? allResults.filter((r) => r.jd_id === filterJdId)
-    : allResults
+  ? allResults.filter((r) => r.jd_id === filterJdId)
+  : allResults
 
   return (
     <Box sx={{ py: 4, px: 4, pb: 8 }}>
@@ -38,7 +38,7 @@ export default function ResultsPage() {
           <LeaderboardRoundedIcon sx={{ fontSize: 52, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h6" fontWeight={700} color="text.secondary">No results yet</Typography>
           <Typography variant="body2" color="text.disabled">
-            Run a screening from the Resume Scanner to see ranked results here.
+            Run a screening on the Screen Resumes page to see ranked results here.
           </Typography>
         </Paper>
       ) : (
@@ -73,7 +73,7 @@ export default function ResultsPage() {
             {filtered.length > 0 ? (
               <RankedTable results={filtered} jdList={jdList} />
             ) : (
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text-secondary">
                 No results match the selected filter.
               </Typography>
             )}

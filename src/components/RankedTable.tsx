@@ -17,23 +17,23 @@ import ScoreBreakdown from './ScoreBreakdown'
 /* ── helpers ─────────────────────────────────────────────────────── */
 
 const EXP_RANGES = [
-  { label: 'Any',   min: 0,  max: Infinity },
-  { label: '0 – 2y', min: 0,  max: 2 },
-  { label: '2 – 5y', min: 2,  max: 5 },
-  { label: '5 – 10y', min: 5,  max: 10 },
-  { label: '10y +',  min: 10, max: Infinity },
+  { label: 'Any', min: 0, max: Infinity },
+  { label: '0 – 2y', min: 0, max: 2 },
+  { label: '2 – 5y', min: 2, max: 5 },
+  { label: '5 – 10y', min: 5, max: 10 },
+  { label: '10y +', min: 10, max: Infinity },
 ]
 
 const FLAG_OPTIONS = [
-  { value: '',                     label: 'Any' },
-  { value: 'date_overlap',         label: 'Date Overlap' },
+  { value: '', label: 'Any' },
+  { value: 'date_overlap', label: 'Date Overlap' },
   { value: 'experience_exaggeration', label: 'Exp. Exaggeration' },
-  { value: 'employment_gap',       label: 'Employment Gap' },
+  { value: 'employment_gap', label: 'Employment Gap' },
   { value: 'unverifiable_timeline',label: 'No Timeline' },
-  { value: 'partial_dates',        label: 'Partial Dates' },
-  { value: 'skill_padding',        label: 'Skill Padding' },
+  { value: 'partial_dates', label: 'Partial Dates' },
+  { value: 'skill_padding', label: 'Skill Padding' },
   { value: 'missing_role_details', label: 'Thin Descriptions' },
-  { value: '__none__',             label: 'No Flags' },
+  { value: '__none__', label: 'No Flags' },
 ]
 
 const CRITERIA_LABELS = ['Skills Match', 'Experience Relevance', 'Years of Experience', 'Education', 'Career Progression']
@@ -78,7 +78,6 @@ function RankAvatar({ rank }: { rank: number }) {
 
 interface Props {
   results: ScoringResult[]
-  jdList?: JobDescription[]
 }
 
 /* ── Component ───────────────────────────────────────────────────── */
@@ -88,8 +87,8 @@ export default function RankedTable({ results, jdList = [] }: Props) {
 
   // filter state
   const [candidateQ, setCandidateQ] = useState('')
-  const [jdFilter,   setJdFilter]   = useState<number | ''>('')
-  const [expRange,   setExpRange]   = useState(0)        // index into EXP_RANGES
+  const [jdFilter, setJdFilter] = useState<number | ''>('')
+  const [expRange, setExpRange] = useState(0) // index into EXP_RANGES
   const [flagFilter, setFlagFilter] = useState('')
 
   const hasFilters = candidateQ !== '' || jdFilter !== '' || expRange !== 0 || flagFilter !== ''
@@ -104,13 +103,15 @@ export default function RankedTable({ results, jdList = [] }: Props) {
     for (const r of results) {
       if (!seen.has(r.jd_id)) seen.set(r.jd_id, r.jd_title ?? `JD #${r.jd_id}`)
     }
-    return [...seen.entries()].map(([id, title]) => ({ id, title }))
+    // Convert Map_entries to array explicitly to avoid TypeScript iteration issues
+    return Array.from(seen.entries()).map(([id, title]) => ({ id, title }))
   }, [results])
 
   /* ── filtered rows ── */
   const filtered = useMemo(() => {
     const { min, max } = EXP_RANGES[expRange]
-    return results.filter((r) => {
+    // First, filter the results
+    const filteredResults = results.filter((r) => {
       if (candidateQ && !r.name?.toLowerCase().includes(candidateQ.toLowerCase())) return false
       if (jdFilter !== '' && r.jd_id !== jdFilter) return false
       const exp = r.total_experience_years ?? 0
@@ -119,67 +120,98 @@ export default function RankedTable({ results, jdList = [] }: Props) {
       if (flagFilter && !(r.flags ?? []).some((f) => f.type === flagFilter)) return false
       return true
     })
+    // Then sort by rank ascending (1, 2, 3, ...)
+    return [...filteredResults].sort((a, b) => (a.rank || Infinity) - (b.rank || Infinity))
   }, [results, candidateQ, jdFilter, expRange, flagFilter])
 
   /* ── columns ── */
   const columns: GridColDef[] = [
     {
-      field: 'rank', headerName: '#', width: 46,
+      field: 'rank', headerName: '#', width: 40,
       renderCell: (p: GridRenderCellParams) => <RankAvatar rank={p.value} />,
     },
     {
-      field: 'name', headerName: 'Candidate', width: 140,
-      renderCell: (p: GridRenderCellParams<ScoringResult>) => (
-        <Typography variant="body2" fontWeight={600} noWrap>{p.row.name}</Typography>
-      ),
+      field: 'name', headerName: 'Candidate', width: 130,
+      renderCell: (p: GridRenderCellParams<ScoringResult>) => {
+        // Defensive: check if name exists
+        if (!p.row.name) {
+          return <Typography variant="body2" fontWeight={600} noWrap>Unknown Candidate</Typography>
+        }
+        return (
+          <Typography variant="body2" fontWeight={600} noWrap>{p.row.name}</Typography>
+        )
+      },
     },
     {
-      field: 'candidate_email', headerName: 'Email', width: 180,
-      renderCell: (p: GridRenderCellParams<ScoringResult>) => (
-        <Typography variant="caption" color="text.secondary" noWrap>
-          {p.row.candidate_email || '—'}
-        </Typography>
-      ),
-    },
-    {
-      field: 'jd_title', headerName: 'Job Description', width: 170,
-      renderCell: (p: GridRenderCellParams<ScoringResult>) => (
-        <Tooltip title={p.row.jd_title ?? ''} arrow placement="top">
-          <Typography variant="body2" noWrap sx={{ maxWidth: 155, color: 'primary.main', fontWeight: 500 }}>
-            {p.row.jd_title ?? `JD #${p.row.jd_id}`}
+      field: 'candidate_email', headerName: 'Email', width: 160,
+      renderCell: (p: GridRenderCellParams<ScoringResult>) => {
+        // Defensive: check if email exists
+        return (
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {p.row.candidate_email || '—'}
           </Typography>
-        </Tooltip>
-      ),
+        )
+      },
+    },
+    {
+      field: 'jd_title', headerName: 'Job Description', width: 150,
+      renderCell: (p: GridRenderCellParams<ScoringResult>) => {
+        // Defensive: check if JD exists
+        if (!p.row.jd_title && p.row.jd_id != null) {
+          return (
+            <Tooltip title="Job description no longer available" arrow placement="top">
+              <Typography variant="body2" noWrap sx={{ maxWidth: 155, color: 'warning.main', fontWeight: 500 }}>
+                JD #{p.row.jd_id} (deleted)
+              </Typography>
+            </Tooltip>
+          )
+        }
+        return (
+          <Tooltip title={p.row.jd_title ?? ''} arrow placement="top">
+            <Typography variant="body2" noWrap sx={{ maxWidth: 155, color: 'primary.main', fontWeight: 500 }}>
+              {p.row.jd_title ?? `JD #${p.row.jd_id}`}
+            </Typography>
+          </Tooltip>
+        )
+      },
     },
     {
       field: 'total_score', headerName: 'Score', width: 140,
       renderCell: (p: GridRenderCellParams) => <ScoreBar value={p.value} />,
     },
     {
-      field: 'total_experience_years', headerName: 'Exp.', width: 80,
-      renderCell: (p: GridRenderCellParams) => (
-        <Typography variant="caption">{p.value ? `${Number(p.value).toFixed(1)}y` : '—'}</Typography>
-      ),
+      field: 'total_experience_years', headerName: 'Exp.', width: 65,
+      renderCell: (p: GridRenderCellParams) => {
+        // Defensive: check if experience exists
+        return (
+          <Typography variant="caption">{p.value ? `${Number(p.value).toFixed(1)}y` : '—'}</Typography>
+        )
+      },
     },
     {
-      field: 'skills', headerName: 'Key Skills', flex: 1, minWidth: 160, sortable: false,
-      renderCell: (p: GridRenderCellParams<ScoringResult>) => (
-        <Stack direction="row" spacing={0.4} flexWrap="wrap" useFlexGap>
-          {(p.row.skills ?? []).slice(0, 2).map((s) => (
-            <Chip key={s} label={s} size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
-          ))}
-          {(p.row.skills ?? []).length > 2 && (
-            <Typography variant="caption" color="text.disabled">
-              +{(p.row.skills ?? []).length - 2}
-            </Typography>
-          )}
-        </Stack>
-      ),
-    },
-    {
-      field: 'flags', headerName: 'Flags', width: 180, sortable: false,
+      field: 'skills', headerName: 'Key Skills', flex: 1, minWidth: 150, sortable: false,
       renderCell: (p: GridRenderCellParams<ScoringResult>) => {
-        const flags = p.row.flags ?? []
+        // Defensive: ensure skills is an array
+        const skills = p.row.skills || []
+        return (
+          <Stack direction="row" spacing={0.4} flexWrap="wrap" useFlexGap>
+            {skills.slice(0, 2).map((s) => (
+              <Chip key={s} label={s} size="small" sx={{ height: 18, fontSize: '0.6rem' }} />
+            ))}
+            {skills.length > 2 && (
+              <Typography variant="caption" color="text.disabled">
+                +{skills.length - 2}
+              </Typography>
+            )}
+          </Stack>
+        )
+      },
+    },
+    {
+      field: 'flags', headerName: 'Flags', width: 160, sortable: false,
+      renderCell: (p: GridRenderCellParams<ScoringResult>) => {
+        // Defensive: ensure flags is an array
+        const flags = p.row.flags || []
         if (!flags.length) {
           return (
             <Chip
@@ -195,14 +227,29 @@ export default function RankedTable({ results, jdList = [] }: Props) {
       },
     },
     {
-      field: 'actions', headerName: '', width: 52, sortable: false,
-      renderCell: (p: GridRenderCellParams<ScoringResult>) => (
-        <Tooltip title="View score breakdown">
-          <IconButton size="small" onClick={() => setSelected(p.row)}>
-            <InfoOutlinedIcon sx={{ fontSize: 16 }} color="primary" />
-          </IconButton>
-        </Tooltip>
-      ),
+      field: 'scoreInfo', headerName: 'Score Info', width: 100, sortable: false,
+      renderCell: (p: GridRenderCellParams<ScoringResult>) => {
+        // Defensive: check if we can display actions
+        if (!p.row.resume_id) {
+          return null
+        }
+        return (
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => setSelected(p.row)}
+            sx={{
+              fontSize: '0.7rem',
+              px: 1.2,
+              py: 0.5,
+              height: 'auto',
+              minWidth: 'auto',
+            }}
+          >
+            View
+          </Button>
+        )
+      },
     },
   ]
 

@@ -9,7 +9,7 @@ const ACCEPT = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
 }
 
-const MAX_SIZE_BYTES = 5 * 1024 * 1024  // 5 MB
+const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
 const MAX_SIZE_LABEL = '5 MB'
 
 interface Props {
@@ -53,7 +53,7 @@ export default function UploadZone({ onDrop, loading }: Props) {
   })
 
   const borderColor = isDragReject ? 'error.main' : isDragActive ? 'primary.main' : 'grey.300'
-  const bgColor     = isDragReject ? '#fff5f5'    : isDragActive ? 'primary.50'   : 'grey.50'
+  const bgColor = isDragReject ? '#fff5f5' : isDragActive ? 'primary.50' : 'grey.50'
 
   return (
     <Box>
@@ -83,7 +83,9 @@ export default function UploadZone({ onDrop, loading }: Props) {
             : 'Drag & drop resumes here'}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          PDF, DOC, DOCX · multiple files · max {MAX_SIZE_LABEL} each
+          Upload resumes in PDF, Word (.doc or .docx) format
+          <br />
+          You can upload multiple files at once, each under 5 MB
         </Typography>
       </Box>
 

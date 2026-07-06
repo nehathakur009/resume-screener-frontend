@@ -1,27 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import {
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  InputAdornment,
-  Paper,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
+  Box, Button, Chip, Dialog, DialogContent, DialogTitle,
+  IconButton, InputAdornment, Paper, Stack, TextField,
+  Tooltip, Typography,
 } from '@mui/material'
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid'
 import AddIcon from '@mui/icons-material/Add'
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
-import DeleteIcon from '@mui/icons-material/Delete'
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline'
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined'
 
@@ -29,8 +17,6 @@ import { AppDispatch, RootState } from '../store'
 import { fetchAllJDs } from '../store/apps/scoring'
 import { JobDescription } from '../types'
 import AddJDDialog from '../components/AddJDDialog'
-import EditJDDialog from '../components/EditJDDialog'
-import DeleteJDConfirmation from '../components/DeleteJDConfirmation'
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
@@ -41,8 +27,6 @@ export default function JobDescriptionsPage() {
   const [addJDOpen, setAddJDOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [viewJD, setViewJD] = useState<JobDescription | null>(null)
-  const [editJD, setEditJD] = useState<JobDescription | null>(null)
-  const [deleteJobDescription, setDeleteJobDescription] = useState<JobDescription | null>(null)
   const { jdList } = useSelector((s: RootState) => s.scoring)
 
   useEffect(() => { dispatch(fetchAllJDs()) }, [dispatch])
@@ -54,17 +38,6 @@ export default function JobDescriptionsPage() {
 
   const handleJDSaved = (_jd: JobDescription) => {
     setAddJDOpen(false)
-  }
-
-  const handleJDUpdated = (_jd: JobDescription) => {
-    setEditJD(null)
-  }
-
-  const handleJDDeleted = (jdId: number) => {
-    setDeleteJobDescription(null)
-    // Ensure the deleted JD is no longer selected for edit/view
-    if (editJD?.id === jdId) setEditJD(null)
-    if (viewJD?.id === jdId) setViewJD(null)
   }
 
   const columns: GridColDef[] = [
@@ -117,38 +90,18 @@ export default function JobDescriptionsPage() {
     {
       field: 'actions',
       headerName: '',
-      width: 150,
+      width: 64,
       sortable: false,
       renderCell: (p: GridRenderCellParams<JobDescription>) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="View full description">
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={(e) => { e.stopPropagation(); setViewJD(p.row) }}
-            >
-              <VisibilityOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit job description">
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={(e) => { e.stopPropagation(); setEditJD(p.row) }}
-            >
-              <EditOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete job description">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={(e) => { e.stopPropagation(); setDeleteJobDescription(p.row) }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+        <Tooltip title="View full description">
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={(e) => { e.stopPropagation(); setViewJD(p.row) }}
+          >
+            <VisibilityOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ]
@@ -173,10 +126,10 @@ export default function JobDescriptionsPage() {
           <WorkOutlineIcon sx={{ fontSize: 52, color: 'text.disabled', mb: 2 }} />
           <Typography variant="h6" fontWeight={700} color="text.secondary">No job descriptions yet</Typography>
           <Typography variant="body2" color="text.disabled" sx={{ mb: 3 }}>
-            Start by creating your first job description. It’s the foundation for finding great candidates.
+            Add a job description to start screening resumes against it.
           </Typography>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddJDOpen(true)}>
-            Create Your First JD
+            Add JD
           </Button>
         </Paper>
       ) : (
@@ -270,22 +223,6 @@ export default function JobDescriptionsPage() {
           </>
         )}
       </Dialog>
-
-      {/* Edit dialog */}
-      <EditJDDialog
-        open={!!editJD}
-        onClose={() => setEditJD(null)}
-        jobDescription={editJD}
-        onSaved={handleJDUpdated}
-      />
-
-      {/* Delete confirmation dialog */}
-      <DeleteJDConfirmation
-        open={!!deleteJobDescription}
-        onClose={() => setDeleteJobDescription(null)}
-        jobDescription={deleteJobDescription}
-        onDeleted={handleJDDeleted}
-      />
 
       <AddJDDialog
         open={addJDOpen}

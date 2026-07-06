@@ -1,0 +1,96 @@
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import axios from 'axios'
+import { JobDescription, ScoringResult } from '../../../types'
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+
+export const createJD = createAsyncThunk(
+  'scoring/createJD',
+  async (payload: { title: string; description: string }) => {
+    const res = await axios.post<{ data: JobDescription }>(`${API}/jd`, payload)
+    return res.data.data
+  }
+)
+
+export const fetchAllJDs = createAsyncThunk('scoring/fetchAllJDs', async () => {
+  const res = await axios.get<{ data: JobDescription[] }>(`${API}/jd`)
+  return res.data.data
+})
+
+export const runScoring = createAsyncThunk(
+  'scoring/run',
+  async (payload: { jd_id: number; resume_ids?: number[] }) => {
+    const res = await axios.post<{ data: ScoringResult[]; total_scored: number; failed: number }>(
+      `${API}/scoring/run`,
+      payload
+    )
+    return res.data
+  }
+)
+
+export const fetchResults = createAsyncThunk('scoring/fetchResults', async (jd_id: number) => {
+  const res = await axios.get<{ data: ScoringResult[] }>(`${API}/scoring/results/${jd_id}`)
+  return res.data.data
+})
+
+export const fetchAllResults = createAsyncThunk('scoring/fetchAllResults', async () => {
+  const res = await axios.get<{ data: ScoringResult[] }>(`${API}/scoring/results`)
+  return res.data.data
+})
+
+interface ScoringState {
+  currentJD: JobDescription | null
+  jdList: JobDescription[]
+  results: ScoringResult[]
+  allResults: ScoringResult[]
+  scoringStatus: 'idle' | 'loading' | 'success' | 'failed'
+  error: string | null
+}
+
+const initialState: ScoringState = {
+  currentJD: null,
+  jdList: [],
+  results: [],
+  allResults: [],
+  scoringStatus: 'idle',
+  error: null,
+}
+
+const scoringSlice = createSlice({
+  name: 'scoring',
+  initialState,
+  reducers: {
+    clearResults: (state) => {
+      state.results = []
+      state.currentJD = null
+      state.scoringStatus = 'idle'
+    },
+    setCurrentJD: (state, action) => {
+      state.currentJD = action.payload
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(createJD.fulfilled, (state, action) => {
+        state.currentJD = action.payload
+        state.jdList = [action.payload, ...state.jdList.filter((j) => j.id !== action.payload.id)]
+      })
+      .addCase(fetchAllJDs.fulfilled, (state, action) => { state.jdList = action.payload })
+
+      .addCase(runScoring.pending, (state) => { state.scoringStatus = 'loading'; state.error = null })
+      .addCase(runScoring.fulfilled, (state, action) => {
+        state.scoringStatus = 'success'
+        state.results = action.payload.data
+      })
+      .addCase(runScoring.rejected, (state, action) => {
+        state.scoringStatus = 'failed'
+        state.error = action.error.message ?? 'Scoring failed'
+      })
+
+      .addCase(fetchResults.fulfilled, (state, action) => { state.results = action.payload })
+      .addCase(fetchAllResults.fulfilled, (state, action) => { state.allResults = action.payload })
+  },
+})
+
+export const { clearResults, setCurrentJD } = scoringSlice.actions
+export default scoringSlice.reducer

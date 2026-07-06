@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { useForm, Controller } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -6,11 +7,11 @@ import {
   Box, Button, CircularProgress, Dialog, DialogActions,
   DialogContent, DialogTitle, Stack, TextField, Typography,
 } from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import toast from 'react-hot-toast'
 
 import { AppDispatch } from '../store'
-import { createJD } from '../store/apps/scoring'
+import { updateJD } from '../store/apps/scoring'
 import { JobDescription } from '../types'
 
 const TITLE_MAX = 150
@@ -40,10 +41,11 @@ function charCount(val: string, max: number) {
 interface Props {
   open: boolean
   onClose: () => void
+  jobDescription: JobDescription | null
   onSaved?: (jd: JobDescription) => void
 }
 
-export default function AddJDDialog({ open, onClose, onSaved }: Props) {
+export default function EditJDDialog({ open, onClose, jobDescription, onSaved }: Props) {
   const dispatch = useDispatch<AppDispatch>()
 
   const {
@@ -53,20 +55,49 @@ export default function AddJDDialog({ open, onClose, onSaved }: Props) {
     formState: { errors, isSubmitting, isValid, isSubmitted },
   } = useForm<FormValues>({
     resolver: yupResolver(schema),
-    defaultValues: { title: '', description: '' },
+    defaultValues: {
+      title: '',
+      description: ''
+    },
     mode: 'onTouched', // validate when user leaves a field
   })
 
+  // Reset form when jobDescription changes and dialog is open
+  useEffect(() => {
+    if (open && jobDescription) {
+      console.log('Resetting form with jobDescription:', jobDescription)
+      reset({
+        title: jobDescription.title || '',
+        description: jobDescription.description || ''
+      })
+    } else if (open && !jobDescription) {
+      console.log('Resetting form to empty values as jobDescription is null')
+      reset({ title: '', description: '' })
+    }
+  }, [open, jobDescription, reset])
+
+  // Log for debugging
+  useEffect(() => {
+    console.log('EditJDDialog: jobDescription prop changed:', jobDescription)
+  }, [jobDescription])
+
   const onSubmit = async (data: FormValues) => {
+    if (!jobDescription) return
+
     try {
-      const jd = await dispatch(createJD(data)).unwrap()
+      const jd = await dispatch(updateJD({
+        id: jobDescription.id,
+        title: data.title,
+        description: data.description
+      })).unwrap()
+
       const shortTitle = jd.title.length > 40 ? jd.title.slice(0, 40) + '…' : jd.title
-      toast.success(`Job description saved: "${shortTitle}"`)
+      toast.success(`Job description updated: "${shortTitle}"`)
       reset()
       onSaved?.(jd)
       onClose()
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save JD')
+      toast.error(err.message || 'Failed to update JD')
     }
   }
 
@@ -78,9 +109,9 @@ export default function AddJDDialog({ open, onClose, onSaved }: Props) {
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ pb: 0.5 }}>
-        Add Job Description
+        Edit Job Description
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, fontWeight: 400 }}>
-          Save a JD to the library. Run scoring against it any time from the history panel.
+          Update the job description and save changes.
         </Typography>
       </DialogTitle>
 
@@ -154,9 +185,9 @@ export default function AddJDDialog({ open, onClose, onSaved }: Props) {
             variant="contained"
             disableElevation
             disabled={isSubmitting || (isSubmitted && !isValid)}
-            startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <AddIcon />}
+            startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <EditOutlinedIcon />}
           >
-            {isSubmitting ? 'Saving…' : 'Save JD'}
+            {isSubmitting ? 'Saving…' : 'Update JD'}
           </Button>
         </DialogActions>
       </Box>

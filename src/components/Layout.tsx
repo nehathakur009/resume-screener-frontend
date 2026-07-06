@@ -14,11 +14,11 @@ import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined'
 const DRAWER_WIDTH = 240
 
 const navItems = [
-  { label: 'Dashboard',        href: '/',                 icon: <HomeIcon fontSize="small" /> },
-  { label: 'Screen Resumes',   href: '/scanner',          icon: <SearchIcon fontSize="small" /> },
+  { label: 'Dashboard', href: '/', icon: <HomeIcon fontSize="small" /> },
+  { label: 'Screen Resumes', href: '/scanner', icon: <SearchIcon fontSize="small" /> },
   { label: 'Job Descriptions', href: '/job-descriptions', icon: <WorkIcon fontSize="small" /> },
-  { label: 'Resumes',          href: '/resumes',          icon: <DescriptionIcon fontSize="small" /> },
-  { label: 'Results',          href: '/results',          icon: <LeaderboardIcon fontSize="small" /> },
+  { label: 'Resumes', href: '/resumes', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Results', href: '/results', icon: <LeaderboardIcon fontSize="small" /> },
 ]
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -101,7 +101,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <Box sx={{ px: 2.5, py: 2, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.25)' }}>
-            smartTS · Resume Builder
+            © 2026 Neha Thakur. All rights reserved.
           </Typography>
         </Box>
       </Drawer>
