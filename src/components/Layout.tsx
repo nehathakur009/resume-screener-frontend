@@ -11,7 +11,7 @@ import WorkIcon from '@mui/icons-material/Work'
 import LeaderboardIcon from '@mui/icons-material/Leaderboard'
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined'
 
-const DRAWER_WIDTH = 240
+const DRAWER_WIDTH = 200
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: <HomeIcon fontSize="small" /> },

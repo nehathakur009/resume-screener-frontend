@@ -189,7 +189,7 @@ export default function RankedTable({ results, jdList = [] }: Props) {
       },
     },
     {
-      field: 'skills', headerName: 'Key Skills', flex: 1, minWidth: 150, sortable: false,
+      field: 'skills', headerName: 'Key Skills', flex: 1, minWidth: 110, maxWidth: 110, sortable: false,
       renderCell: (p: GridRenderCellParams<ScoringResult>) => {
         // Defensive: ensure skills is an array
         const skills = p.row.skills || []
@@ -208,7 +208,7 @@ export default function RankedTable({ results, jdList = [] }: Props) {
       },
     },
     {
-      field: 'flags', headerName: 'Flags', width: 160, sortable: false,
+      field: 'flags', headerName: 'Flags', width: 120, sortable: false,
       renderCell: (p: GridRenderCellParams<ScoringResult>) => {
         // Defensive: ensure flags is an array
         const flags = p.row.flags || []
@@ -227,7 +227,7 @@ export default function RankedTable({ results, jdList = [] }: Props) {
       },
     },
     {
-      field: 'scoreInfo', headerName: 'Score Info', width: 100, sortable: false,
+      field: 'scoreInfo', headerName: 'Score Info', width: 80, sortable: false,
       renderCell: (p: GridRenderCellParams<ScoringResult>) => {
         // Defensive: check if we can display actions
         if (!p.row.resume_id) {
