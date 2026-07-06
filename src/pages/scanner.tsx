@@ -64,22 +64,38 @@ export default function ScannerPage() {
   const handleFileDrop = async (files: File[]) => {
     setScreened(false)
 
-    // Upload files sequentially to avoid overwhelming the server
+    // Upload files sequentially with retry logic to handle initialization delays
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const formData = new FormData()
       formData.append('resume', file)
 
-      try {
-        const result = await dispatch(uploadResume(formData)).unwrap()
-        setNewUploadIds((prev) => new Set([...prev, result.data.id]))
-        if (result.duplicate) {
-          toast(`Already in system — profile refreshed: ${file.name}`, { icon: '🔄' })
-        } else {
-          toast.success(`Parsed & added: ${file.name}`)
+      let success = false
+      let retryCount = 0
+      const maxRetries = 3
+
+      while (!success && retryCount < maxRetries) {
+        try {
+          const result = await dispatch(uploadResume(formData)).unwrap()
+          setNewUploadIds((prev) => new Set([...prev, result.data.id]))
+          if (result.duplicate) {
+            toast(`Already in system — profile refreshed: ${file.name}`, { icon: '🔄' })
+          } else {
+            toast.success(`Parsed & added: ${file.name}`)
+          }
+          success = true
+        } catch (err: any) {
+          retryCount++
+          if (retryCount >= maxRetries) {
+            toast.error(`${file.name}: ${err.message || 'Parse failed'}`)
+          } else {
+            // Wait longer on retry for database to initialize
+            const delay = 1000 * retryCount
+            await new Promise(resolve => setTimeout(resolve, delay))
+            // Show retry hint to user
+            toast.loading(`Retrying upload (${retryCount}/${maxRetries})...`, { id: `retry-${file.name}-${retryCount}` })
+          }
         }
-      } catch (err: any) {
-        toast.error(`${file.name}: ${err.message || 'Parse failed'}`)
       }
 
       // Add a small delay between uploads to give server time to process
@@ -106,7 +122,7 @@ export default function ScannerPage() {
       dispatch(setCurrentJD(selectedJd))
       dispatch(clearResults())
       setScreened(false)
-      toast.loading(`Screening against "${selectedJd.title}"…`, { id: 'scoring' })
+      toast.loading(`Screening against \"${selectedJd.title}\"…`, { id: 'scoring' })
       await dispatch(runScoring({ jd_id: selectedJd.id })).unwrap()
       toast.success('Screening complete!', { id: 'scoring' })
       setScreened(true)
@@ -118,163 +134,163 @@ export default function ScannerPage() {
 
   return (
     <Box sx={{ pb: 8 }}>
-    {/* ── Page header ── */}
-    <Box sx={{ px: 3, pt: 3, pb: 2 }}>
-      <Typography variant="h5" fontWeight={800} letterSpacing={-0.5}>Screen Resumes</Typography>
-      <Typography variant="body2" color="text-secondary">
-        Follow the steps below to rank candidates against a job description.
-      </Typography>
-    </Box>
+      {/* ── Page header ── */}
+      <Box sx={{ px: 3, pt: 3, pb: 2 }}>
+        <Typography variant="h5" fontWeight={800} letterSpacing={-0.5}>Screen Resumes</Typography>
+        <Typography variant="body2" color="text-secondary">
+          Follow the steps below to rank candidates against a job description.
+        </Typography>
+      </Box>
 
-    <Box sx={{ px: 3 }}>
-      <Stack spacing={1.5}>
+      <Box sx={{ px: 3 }}>
+        <Stack spacing={1.5}>
 
-      {/* ── Step 1 · Job Description ── */}
-      <Paper sx={{ p: 2 }}>
-        <StepHeader
-          number={1}
-          label="Job Description"
-          done={!!selectedJd}
-          right={
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => setAddJDOpen(true)}
-              sx={{ flexShrink: 0 }}
-            >
-              Add JD
-            </Button>
-          }
-        />
-
-        {jdList.length === 0 ? (
-          <Alert
-            severity="info"
-            action={
-              <Button color="inherit" size="small" startIcon={<AddIcon />} onClick={() => setAddJDOpen(true)}>
-                Add JD
-              </Button>
-            }
-          >
-            Create your first job description to start scanning resumes. It's the key to finding great candidates.
-          </Alert>
-        ) : (
-          <Stack spacing={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="jd-select-label">Select Job Description</InputLabel>
-              <Select
-                labelId="jd-select-label"
-                value={selectedJdId}
-                label="Select Job Description"
-                onChange={(e) => { setSelectedJdId(e.target.value as number); setScreened(false) }}
-              >
-                {jdList.map((jd) => (
-                  <MenuItem key={jd.id} value={jd.id}>
-                    <Box sx={{ py: 0.25 }}>
-                      <Typography variant="body2" fontWeight={500}>{jd.title}</Typography>
-                      <Typography variant="caption" color="text.secondary">{fmtDate(jd.created_at)}</Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-          </Stack>
-        )}
-      </Paper>
-
-      {/* ── Step 2 · Upload Resumes ── */}
-      <Paper sx={{ p: 2 }}>
-        { <StepHeader
-          number={2}
-          label="Upload Resumes"
-        /> }
-
-        <UploadZone onDrop={handleFileDrop} loading={resumeStatus === 'loading'} />
-
-        {newUploadIds.size > 0 && (
-          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {resumes
-              .filter((r) => newUploadIds.has(r.id))
-              .map((resume) => (
-                <Chip
-                  key={resume.id}
-                  label={resume.name || resume.original_filename}
-                  onDelete={() => handleDelete(resume.id)}
+          {/* ── Step 1 · Job Description ── */}
+          <Paper sx={{ p: 2 }}>
+            <StepHeader
+              number={1}
+              label="Job Description"
+              done={!!selectedJd}
+              right={
+                <Button
                   size="small"
                   variant="outlined"
-                  sx={{ maxWidth: 240 }}
-                />
-              ))}
-          </Box>
-        )}
-      </Paper>
+                  startIcon={<AddIcon />}
+                  onClick={() => setAddJDOpen(true)}
+                  sx={{ flexShrink: 0 }}
+                >
+                  Add JD
+                </Button>
+              }
+            />
 
-      {/* ── Step 3 · Screen ── */}
-      <Paper sx={{ p: 2 }}>
-        {/* <StepHeader number={3} label="Screen Resumes" />*/}
-        <Stack direction="column" alignItems="center" spacing={1}>
-          <Button
-            variant="contained"
-            size="small"
-            disableElevation
-            disabled={!canScreen}
-            onClick={handleScreenResumes}
-            startIcon={
-              isScreening
-                ? <CircularProgress size={12} color="inherit" />
-                : <SearchIcon />
-            }
-            sx={{ px: 2 }}
-          >
-            {isScreening ? 'Screening…' : 'Screen Resumes'}
-          </Button>
+            {jdList.length === 0 ? (
+              <Alert
+                severity="info"
+                action={
+                  <Button color="inherit" size="small" startIcon={<AddIcon />} onClick={() => setAddJDOpen(true)}>
+                    Add JD
+                  </Button>
+                }
+              >
+                Create your first job description to start scanning resumes. It's the key to finding great candidates.
+              </Alert>
+            ) : (
+              <Stack spacing={2}>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="jd-select-label">Select Job Description</InputLabel>
+                  <Select
+                    labelId="jd-select-label"
+                    value={selectedJdId}
+                    label="Select Job Description"
+                    onChange={(e) => { setSelectedJdId(e.target.value as number); setScreened(false) }}
+                  >
+                    {jdList.map((jd) => (
+                      <MenuItem key={jd.id} value={jd.id}>
+                        <Box sx={{ py: 0.25 }}>
+                          <Typography variant="body2" fontWeight={500}>{jd.title}</Typography>
+                          <Typography variant="caption" color="text.secondary">{fmtDate(jd.created_at)}</Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
-          {!selectedJdId && (
-            <Typography variant="caption" color="text.secondary">
-              Select a job description in step 1 to continue.
-            </Typography>
+              </Stack>
+            )}
+          </Paper>
+
+          {/* ── Step 2 · Upload Resumes ── */}
+          <Paper sx={{ p: 2 }}>
+            { <StepHeader
+              number={2}
+              label="Upload Resumes"
+            /> }
+
+            <UploadZone onDrop={handleFileDrop} loading={resumeStatus === 'loading'} />
+
+            {newUploadIds.size > 0 && (
+              <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {resumes
+                  .filter((r) => newUploadIds.has(r.id))
+                  .map((resume) => (
+                    <Chip
+                      key={resume.id}
+                      label={resume.name || resume.original_filename}
+                      onDelete={() => handleDelete(resume.id)}
+                      size="small"
+                      variant="outlined"
+                      sx={{ maxWidth: 240 }}
+                    />
+                  ))}
+              </Box>
+            )}
+          </Paper>
+
+          {/* ── Step 3 · Screen ── */}
+          <Paper sx={{ p: 2 }}>
+            {/* <StepHeader number={3} label="Screen Resumes" />*/}
+            <Stack direction="column" alignItems="center" spacing={1}>
+              <Button
+                variant="contained"
+                size="small"
+                disableElevation
+                disabled={!canScreen}
+                onClick={handleScreenResumes}
+                startIcon={
+                  isScreening
+                    ? <CircularProgress size={12} color="inherit" />
+                    : <SearchIcon />
+                }
+                sx={{ px: 2 }}
+              >
+                {isScreening ? 'Screening…' : 'Screen Resumes'}
+              </Button>
+
+              {!selectedJdId && (
+                <Typography variant="caption" color="text-secondary">
+                  Select a job description in step 1 to continue.
+                </Typography>
+              )}
+              {selectedJdId && resumes.length === 0 && (
+                <Typography variant="caption" color="text-secondary">
+                  Upload at least one resume in step 2 to continue.
+                </Typography>
+              )}
+            </Stack>
+          </Paper>
+
+          {/* ── Step 4 · Ranked Results ── */}
+          {scoringError && <Alert severity="error">{scoringError}</Alert>}
+
+          {screened && results.length > 0 && (
+            <Paper sx={{ p: 2 }}>
+              <StepHeader
+                number={4}
+                label={`Ranked Results: ${results.length} candidate${results.length !== 1 ? 's' : ''}`}
+                done
+              />
+
+              <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1.5, color: 'text.secondary' }}>
+                <InfoOutlinedIcon sx={{ fontSize: 15 }} />
+                <Typography variant="caption">
+                  Scores are computed from 5 weighted criteria. Click the{' '}
+                  <strong>View</strong> button on any row to see the per-criterion breakdown.
+                </Typography>
+              </Stack>
+
+              <RankedTable results={results} jdList={jdList} />
+            </Paper>
           )}
-          {selectedJdId && resumes.length === 0 && (
-            <Typography variant="caption" color="text-secondary">
-              Upload at least one resume in step 2 to continue.
-            </Typography>
-          )}
+
         </Stack>
-      </Paper>
+      </Box>
 
-      {/* ── Step 4 · Ranked Results ── */}
-      {scoringError && <Alert severity="error">{scoringError}</Alert>}
-
-      {screened && results.length > 0 && (
-        <Paper sx={{ p: 2 }}>
-          <StepHeader
-            number={4}
-            label={`Ranked Results: ${results.length} candidate${results.length !== 1 ? 's' : ''}`}
-            done
-          />
-
-          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1.5, color: 'text.secondary' }}>
-            <InfoOutlinedIcon sx={{ fontSize: 15 }} />
-            <Typography variant="caption">
-              Scores are computed from 5 weighted criteria. Click the{' '}
-              <strong>View</strong> button on any row to see the per-criterion breakdown.
-            </Typography>
-          </Stack>
-
-          <RankedTable results={results} jdList={jdList} />
-        </Paper>
-      )}
-
-      </Stack>
-    </Box>
-
-    <AddJDDialog
-      open={addJDOpen}
-      onClose={() => setAddJDOpen(false)}
-      onSaved={handleJDSaved}
-    />
+      <AddJDDialog
+        open={addJDOpen}
+        onClose={() => setAddJDOpen(false)}
+        onSaved={handleJDSaved}
+      />
     </Box>
   )
 }
